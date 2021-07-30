@@ -1,4 +1,4 @@
-module rest
+module simple-payment-api
 
 go 1.16
 
