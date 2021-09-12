@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	"github.com/gorilla/mux"
+	"net/http"
 	"simple-payment-api/app/database"
 )
 
@@ -22,6 +23,6 @@ func New() *App {
 }
 
 func (app *App) initRoutes() {
-	app.Router.HandleFunc("/payment/", app.CreatePaymentHandler()).Methods("POST")
-	app.Router.HandleFunc("/payment/{id}", app.PaymentStatusHandler()).Methods("GET")
+	app.Router.HandleFunc("/payment/", app.CreatePaymentHandler()).Methods(http.MethodPost)
+	app.Router.HandleFunc("/payment/{id}", app.PaymentStatusHandler()).Methods(http.MethodGet)
 }
