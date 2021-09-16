@@ -23,6 +23,7 @@ func New() *App {
 }
 
 func (app *App) initRoutes() {
-	app.Router.HandleFunc("/payment/", app.CreatePaymentHandler()).Methods(http.MethodPost)
-	app.Router.HandleFunc("/payment/{id}", app.PaymentStatusHandler()).Methods(http.MethodGet)
+	app.Router.Handle("/login/", app.LoginHandler()).Methods(http.MethodPost)
+	app.Router.Handle("/payment/", authMiddleware(app.CreatePaymentHandler())).Methods(http.MethodPost)
+	app.Router.Handle("/payment/{id}", authMiddleware(app.PaymentStatusHandler())).Methods(http.MethodGet)
 }

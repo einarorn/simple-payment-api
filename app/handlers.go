@@ -5,10 +5,22 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"simple-payment-api/app/models"
 	"time"
 )
+
+type LoginRequestDto struct {
+	Username string `json:"username"`
+	Password   string `json:"password"`
+}
+
+type LoginResponseDto struct {
+	AccessToken string `json:"access_token"`
+	TokenType   string `json:"token_type"`
+	ExpiresIn   int `json:"expires_in"`
+}
 
 type CreateRequestDto struct {
 	MerchantNumber string `json:"merchantNumber"`
@@ -28,14 +40,38 @@ type StatusResponseDto struct {
 	Updated   time.Time `json:"updated"`
 }
 
-func (app *App) CreatePaymentHandler() http.HandlerFunc {
-	return func(writer http.ResponseWriter, req *http.Request) {
-		fmt.Println("Endpoint hit: createPayment")
+func (app *App) LoginHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		log.Println("[Login] called...")
 
-		reqBody, _ := ioutil.ReadAll(req.Body)
-		var request CreateRequestDto
+		reqBody, _ := ioutil.ReadAll(r.Body)
+		var request LoginRequestDto
 		json.Unmarshal(reqBody, &request)
 
+		if request.Username == "eoo" && request.Password == "Cowabunga!" {
+			token, _ := getToken(request.Username)
+
+			response := LoginResponseDto{
+				AccessToken: token,
+				TokenType: "bearer",
+				ExpiresIn: ValidMinutes * 60,
+			}
+			json.NewEncoder(w).Encode(response)
+		} else {
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write([]byte("Name and password do not match"))
+		}
+	}
+}
+
+func (app *App) CreatePaymentHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		log.Println("[CreatePayment] called...")
+
+		reqBody, _ := ioutil.ReadAll(r.Body)
+		var request CreateRequestDto
+		json.Unmarshal(reqBody, &request)
+		
 		payment := models.PaymentStatus{
 			MerchantNumber: request.MerchantNumber,
 			MerchantName:   request.MerchantName,
@@ -51,15 +87,16 @@ func (app *App) CreatePaymentHandler() http.HandlerFunc {
 		create := CreateResponseDto{
 			PaymentId: paymentId,
 		}
-		json.NewEncoder(writer).Encode(create)
+
+		json.NewEncoder(w).Encode(create)
 	}
 }
 
 func (app *App) PaymentStatusHandler() http.HandlerFunc {
-	return func(writer http.ResponseWriter, req *http.Request) {
-		fmt.Println("Endpoint hit: paymentStatus")
+	return func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("[PaymentStatus] called...")
 
-		vars := mux.Vars(req)
+		vars := mux.Vars(r)
 		key := vars["id"]
 
 		var paymentStatus models.PaymentStatus
@@ -72,6 +109,6 @@ func (app *App) PaymentStatusHandler() http.HandlerFunc {
 			Updated:   paymentStatus.Updated,
 		}
 
-		json.NewEncoder(writer).Encode(status)
+		json.NewEncoder(w).Encode(status)
 	}
 }
